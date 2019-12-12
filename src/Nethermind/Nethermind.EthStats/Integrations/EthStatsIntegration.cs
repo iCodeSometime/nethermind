@@ -117,7 +117,7 @@ namespace Nethermind.EthStats.Integrations
                 return;
             }
 
-            if (_logger.IsDebug) _logger.Debug("ETH Stats sending 'stats' message...");
+            if (_logger.IsTrace) _logger.Trace("ETH Stats sending 'stats' message...");
             SendStatsAsync();
         }
 
@@ -134,7 +134,7 @@ namespace Nethermind.EthStats.Integrations
                 return;
             }
 
-            if (_logger.IsDebug) _logger.Debug("ETH Stats sending 'block', 'pending' messages...");
+            if (_logger.IsTrace) _logger.Trace("ETH Stats sending 'block', 'pending' messages...");
             _lastBlockProcessedTimestamp = timestamp;
             SendBlockAsync(e.Block);
             SendPendingAsync(e.Block.Transactions?.Length ?? 0);
