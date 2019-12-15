@@ -35,7 +35,7 @@ namespace Nethermind.Blockchain.Receipts
         {
         }
 
-        public void Insert(long blockNumber, TxReceipt txReceipt)
+        public void Insert(long blockNumber, TxReceipt[] txReceipt)
         {
         }
 

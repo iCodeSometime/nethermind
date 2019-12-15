@@ -73,18 +73,24 @@ namespace Nethermind.Blockchain.Receipts
                 Rlp.Encode(txReceipt, behaviors).Bytes);
         }
 
-        public void Insert(long blockNumber, TxReceipt txReceipt)
+        public void Insert(long blockNumber, TxReceipt[] receipts)
         {
-            if (txReceipt == null && blockNumber != 1L)
+            if (receipts == null && blockNumber != 1L)
             {
-                throw new ArgumentNullException(nameof(txReceipt));
+                throw new ArgumentNullException(nameof(receipts));
             }
 
-            if (txReceipt != null)
+            if (receipts != null)
             {
+                _database.StartBatch();
                 var spec = _specProvider.GetSpec(blockNumber);
                 RlpBehaviors behaviors = spec.IsEip658Enabled ? RlpBehaviors.Eip658Receipts : RlpBehaviors.None;
-                _database.Set(txReceipt.TxHash, Rlp.Encode(txReceipt, behaviors).Bytes);
+                foreach (TxReceipt receipt in receipts)
+                {
+                    _database.Set(receipt.TxHash, Rlp.Encode(receipt, behaviors).Bytes);    
+                }
+                
+                _database.CommitBatch();
             }
 
             LowestInsertedReceiptBlock = blockNumber;
