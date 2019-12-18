@@ -84,7 +84,10 @@ jobs:
       with:
         name: darwin_artifact_rocksdb
         path: rocksdb/librocksdb.dylib
+    - uses: actions/checkout@v2
+      if: matrix.os == 'ubuntu-latest'
     - name: Creating PR
+      if: matrix.os == 'ubuntu-latest'
       id: cpr
       uses: peter-evans/create-pull-request@v1
       with:
