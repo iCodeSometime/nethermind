@@ -1084,16 +1084,24 @@ namespace Nethermind.Blockchain
             // and these are very likely to be all at the head of the chain
             if (blockHash == Head?.Hash)
             {
+                _logger.Warn("Is known because blockHash == Head?.Hash");
                 return true;
             }
 
             if (_headerCache.Get(blockHash) != null)
             {
+                _logger.Warn("Is known because _headerCache.Get(blockHash) != null");
                 return true;
             }
 
             ChainLevelInfo level = LoadLevel(number);
-            return level != null && FindIndex(blockHash, level).HasValue;
+            bool isKnown = level != null && FindIndex(blockHash, level).HasValue;
+            if (isKnown)
+            {
+                _logger.Warn("Is known because level != null && FindIndex(blockHash, level).HasValue");
+            }
+            
+            return isKnown;
         }
 
         private void UpdateDeletePointer(Keccak hash)
