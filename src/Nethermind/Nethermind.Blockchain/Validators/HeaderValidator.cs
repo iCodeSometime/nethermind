@@ -163,6 +163,8 @@ namespace Nethermind.Blockchain.Validators
                 _logger.Warn($"When testing parent - header was {parent?.ToString(BlockHeader.Format.Short)} and block was {parentBlock?.Header?.ToString(BlockHeader.Format.Short)}");
             }
             
+            _logger.Warn($"Found parent {parent?.Hash} os {header?.Hash} and now validating");
+            
             return Validate(header, parent, isOmmer);
         }
 
