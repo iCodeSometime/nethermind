@@ -157,6 +157,12 @@ namespace Nethermind.Blockchain.Validators
         public bool Validate(BlockHeader header, bool isOmmer = false)
         {
             BlockHeader parent = _blockTree.FindHeader(header.ParentHash, BlockTreeLookupOptions.TotalDifficultyNotNeeded);
+            Block parentBlock = _blockTree.FindBlock(header.ParentHash, BlockTreeLookupOptions.TotalDifficultyNotNeeded);
+            if (parent != parentBlock?.Header)
+            {
+                _logger.Warn($"When testing parent - header was {parent?.ToString(BlockHeader.Format.Short)} and block was {parentBlock?.Header?.ToString(BlockHeader.Format.Short)}");
+            }
+            
             return Validate(header, parent, isOmmer);
         }
 
