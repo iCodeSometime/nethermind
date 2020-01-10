@@ -15,6 +15,7 @@
 //  along with the Nethermind. If not, see <http://www.gnu.org/licenses/>.
 
 using System;
+using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using Nethermind.Core;
@@ -25,6 +26,7 @@ using Nethermind.Dirichlet.Numerics;
 using Nethermind.Evm.Tracing;
 using Nethermind.JsonRpc.Data;
 using Nethermind.Logging;
+using Nethermind.Store;
 
 namespace Nethermind.JsonRpc.Modules.DebugModule
 {
@@ -39,6 +41,21 @@ namespace Nethermind.JsonRpc.Modules.DebugModule
             _logger = logManager.GetClassLogger();
         }
 
+        public ResultWrapper<Keccak[]> debug_findMissingBlocksAtLevel(in long number)
+        {
+            List<Keccak> result = new List<Keccak>();
+            ChainLevelInfo levelInfo = _debugBridge.GetLevelInfo(number);
+            foreach (var blockInfo in levelInfo.BlockInfos)
+            {
+                if (_debugBridge.GetDbValue(DbNames.Headers, blockInfo.BlockHash.Bytes) == null)
+                {
+                    result.Add(blockInfo.BlockHash);
+                }
+            }
+
+            return ResultWrapper<Keccak[]>.Success(result.ToArray());
+        }
+
         public ResultWrapper<ChainLevelForRpc> debug_getChainLevel(in long number)
         {
             ChainLevelInfo levelInfo = _debugBridge.GetLevelInfo(number);
@@ -46,7 +63,7 @@ namespace Nethermind.JsonRpc.Modules.DebugModule
                 ? ResultWrapper<ChainLevelForRpc>.Fail($"Chain level {number} does not exist", ErrorType.NotFound)
                 : ResultWrapper<ChainLevelForRpc>.Success(new ChainLevelForRpc(levelInfo));
         }
-        
+
         public ResultWrapper<bool> debug_deleteChainSlice(in long startNumber, in long endNumber)
         {
             _debugBridge.DeleteChainSlice(startNumber, endNumber);
@@ -103,9 +120,9 @@ namespace Nethermind.JsonRpc.Modules.DebugModule
                 return ResultWrapper<GethLikeTxTrace>.Fail($"Trace is null for RLP {blockRlp.ToHexString()} and transactionTrace hash {transactionHash}", ErrorType.NotFound);
             }
 
-            return ResultWrapper<GethLikeTxTrace>.Success(transactionTrace);            
+            return ResultWrapper<GethLikeTxTrace>.Success(transactionTrace);
         }
-        
+
         public ResultWrapper<GethLikeTxTrace> debug_traceTransactionInBlockByIndex(byte[] blockRlp, int txIndex, GethTraceOptions options = null)
         {
             var blockTrace = _debugBridge.GetBlockTrace(new Rlp(blockRlp), options);
@@ -115,7 +132,7 @@ namespace Nethermind.JsonRpc.Modules.DebugModule
                 return ResultWrapper<GethLikeTxTrace>.Fail($"Trace is null for RLP {blockRlp.ToHexString()} and transaction index {txIndex}", ErrorType.NotFound);
             }
 
-            return ResultWrapper<GethLikeTxTrace>.Success(transactionTrace);            
+            return ResultWrapper<GethLikeTxTrace>.Success(transactionTrace);
         }
 
         public ResultWrapper<GethLikeTxTrace[]> debug_traceBlock(byte[] blockRlp, GethTraceOptions options = null)
@@ -131,7 +148,7 @@ namespace Nethermind.JsonRpc.Modules.DebugModule
 
         public ResultWrapper<GethLikeTxTrace[]> debug_traceBlockByNumber(UInt256 blockNumber, GethTraceOptions options = null)
         {
-            var blockTrace = _debugBridge.GetBlockTrace((long)blockNumber, options);
+            var blockTrace = _debugBridge.GetBlockTrace((long) blockNumber, options);
             if (blockTrace == null)
             {
                 return ResultWrapper<GethLikeTxTrace[]>.Fail($"Trace is null for block {blockNumber}", ErrorType.NotFound);
@@ -173,20 +190,20 @@ namespace Nethermind.JsonRpc.Modules.DebugModule
             byte[] rlp = _debugBridge.GetBlockRlp(blockNumber);
             if (rlp == null)
             {
-                return ResultWrapper<byte[]>.Fail($"Block {blockNumber} was not found", ErrorType.NotFound);    
+                return ResultWrapper<byte[]>.Fail($"Block {blockNumber} was not found", ErrorType.NotFound);
             }
-            
+
             return ResultWrapper<byte[]>.Success(rlp);
         }
-        
+
         public ResultWrapper<byte[]> debug_getBlockRlpByHash(Keccak hash)
         {
             byte[] rlp = _debugBridge.GetBlockRlp(hash);
             if (rlp == null)
             {
-                return ResultWrapper<byte[]>.Fail($"Block {hash} was not found", ErrorType.NotFound);    
+                return ResultWrapper<byte[]>.Fail($"Block {hash} was not found", ErrorType.NotFound);
             }
-            
+
             return ResultWrapper<byte[]>.Success(rlp);
         }
 

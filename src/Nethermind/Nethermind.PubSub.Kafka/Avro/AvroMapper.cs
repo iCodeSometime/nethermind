@@ -40,7 +40,7 @@ namespace Nethermind.PubSub.Kafka.Avro
                 parentHash = block.ParentHash.ToString(),
                 gasLimit = block.GasLimit,
                 gasUsed = block.GasUsed,
-                blockNumber = (long) block.Number,
+                blockNumber = block.Number,
                 timestamp = (long) block.Timestamp,
                 extraData = block.Header.ExtraData,
                 miner = block.Beneficiary.ToString(),
@@ -74,7 +74,7 @@ namespace Nethermind.PubSub.Kafka.Avro
                 r = transaction.Signature.R.ToString(),
                 s = transaction.Signature.S.ToString(),
                 input = transaction.Data ?? new byte[0],
-                gas = (long) transaction.GasLimit,
+                gas = transaction.GasLimit,
                 weiValue = transaction.Value.ToString()
             };
 
@@ -88,11 +88,11 @@ namespace Nethermind.PubSub.Kafka.Avro
             return new FullTransaction
             {
                 minedAt = (long) _blockTree.FindBlock(receipt.BlockHash, BlockTreeLookupOptions.None).Timestamp,
-                blockNumber = (long) receipt.BlockNumber,
+                blockNumber = receipt.BlockNumber,
                 receipt = new Receipt
                 {
                     transactionIndex = index,
-                    blockNumber = (long) receipt.BlockNumber,
+                    blockNumber = receipt.BlockNumber,
                     toAddr = receipt.Recipient?.ToString() ?? string.Empty,
                     blockHash = receipt.BlockHash.ToString(),
                     fromAddr = receipt.Sender?.ToString() ?? string.Empty,
@@ -105,7 +105,7 @@ namespace Nethermind.PubSub.Kafka.Avro
                     logs = receipt.Logs?.Select((l, i) => new Log
                     {
                         logIndex = i,
-                        blockNumber = (long) receipt.BlockNumber,
+                        blockNumber = receipt.BlockNumber,
                         transactionIndex = receipt.Index,
                         blockHash = receipt.BlockHash.ToString(),
                         data = l.Data.ToString(),

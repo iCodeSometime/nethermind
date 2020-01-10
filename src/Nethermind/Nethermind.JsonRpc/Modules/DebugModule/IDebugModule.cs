@@ -24,6 +24,9 @@ namespace Nethermind.JsonRpc.Modules.DebugModule
     [RpcModule(ModuleType.Debug)]
     public interface IDebugModule : IModule
     {
+        [JsonRpcMethod(Description = "(Nethermind specific).", IsReadOnly = true)]
+        ResultWrapper<Keccak[]> debug_findMissingBlocksAtLevel(in long number);
+    
         [JsonRpcMethod(Description = "Retrieves a representation of tree branches on a given chain level (Nethermind specific).", IsReadOnly = true)]
         ResultWrapper<ChainLevelForRpc> debug_getChainLevel(in long number);
         

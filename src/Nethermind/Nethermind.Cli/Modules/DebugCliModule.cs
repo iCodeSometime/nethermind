@@ -24,6 +24,12 @@ namespace Nethermind.Cli.Modules
     [CliModule("debug")]
     public class DebugCliModule : CliModuleBase
     {
+        [CliFunction("debug", "findMissingBlocksAtLevel")]
+        public JsValue FindMissingBlocksAtLevel(long number)
+        {
+            return NodeManager.PostJint("debug_findMissingBlocksAtLevel", number).Result;
+        }
+        
         [CliFunction("debug", "getChainlevel")]
         public JsValue GetChainLevel(long number)
         {
