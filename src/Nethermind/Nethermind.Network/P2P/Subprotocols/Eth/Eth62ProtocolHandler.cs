@@ -340,6 +340,11 @@ namespace Nethermind.Network.P2P.Subprotocols.Eth
             for (int i = 0; i < msg.Transactions.Length; i++)
             {
                 var transaction = msg.Transactions[i];
+                if (transaction.Data.Length > 128 * 1024)
+                {
+                    throw new EthSynchronizationException("Transactions with data larger than 128kb are not accepted");
+                }
+                
                 transaction.DeliveredBy = Node.Id;
                 transaction.Timestamp = _timestamper.EpochSeconds;
                 AddTxResult result = _txPool.AddTransaction(transaction, SyncServer.Head.Number);
