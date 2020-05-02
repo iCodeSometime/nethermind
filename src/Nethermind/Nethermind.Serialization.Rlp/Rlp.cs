@@ -176,14 +176,21 @@ namespace Nethermind.Serialization.Rlp
             {
                 return OfEmptySequence;
             }
-            
+
+            // TODO - benchmark
             var rlpDecoder = GetDecoder<T>();
+            Func<T, Rlp> encode = null;
             if (rlpDecoder != null)
+                encode = value => rlpDecoder.Encode(value);
+            else if (typeof(T).IsArray)
+                encode = value => Rlp.Encode(value, behaviors);
+                    
+            if (encode != null)
             {
                 Rlp[] rlpSequence = new Rlp[items.Length];
                 for (int i = 0; i < items.Length; i++)
                 {
-                    rlpSequence[i] = items[i] == null ? OfEmptySequence : rlpDecoder.Encode(items[i], behaviors);
+                    rlpSequence[i] = items[i] == null ? OfEmptySequence : encode(items[i]);
                 }
 
                 return Encode(rlpSequence);

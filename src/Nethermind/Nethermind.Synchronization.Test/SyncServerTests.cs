@@ -176,5 +176,32 @@ namespace Nethermind.Synchronization.Test
 
             sealValidator.DidNotReceive().ValidateSeal(Arg.Any<BlockHeader>(), Arg.Any<bool>());
         }
+        [Test]
+        public void Can_build_CHT()
+        {
+            var basePath = "C:\\nethermind_db\\nethermind_db\\ropsten";
+            var dbConfig = new Db.Rocks.Config.DbConfig();
+            var blockDb = new Db.Rocks.BlocksRocksDb(basePath, dbConfig);
+            var headerDb = new Db.Rocks.HeadersRocksDb(basePath, dbConfig);
+            var blockInfoDb = new Db.Rocks.BlockInfosRocksDb(basePath, dbConfig);
+            var chainLevelInfoRepo = new State.Repositories.ChainLevelInfoRepository(blockInfoDb);
+            var txPool = Substitute.For<TxPool.ITxPool>();
+            var bloomStorage = Substitute.For<Store.Bloom.IBloomStorage>();
+            var blockTree = new BlockTree(blockDb, headerDb, blockInfoDb, chainLevelInfoRepo, RopstenSpecProvider.Instance, txPool, bloomStorage, LimboLogs.Instance);
+
+            var syncConfig = new SyncConfig();
+            syncConfig.PivotHash = "0x442f219d065a0d9c460bd82f041f984750a8e45205d1b951bbcb7d8beaff8b5f";
+
+            var server = new SyncServer(new StateDb(), new StateDb(), blockTree, Substitute.For<IReceiptFinder>(), Substitute.For<IBlockValidator>(), Substitute.For<ISealValidator>(), Substitute.For<ISyncPeerPool>(), Substitute.For<ISyncModeSelector>(), Substitute.For<ISynchronizer>(), syncConfig, LimboLogs.Instance);
+
+            var trie = server.GetCHT(1);
+            trie.Root.ResolveKey(true);
+            var root = trie.RootHash;
+            trie = server.GetCHT(2);
+            trie.Root.ResolveKey(true);
+            root = trie.RootHash;
+            
+
+        }
     }
 }

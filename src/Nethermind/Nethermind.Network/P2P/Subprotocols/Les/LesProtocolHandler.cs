@@ -29,6 +29,9 @@ using Nethermind.Stats.Model;
 using Nethermind.Synchronization;
 using Nethermind.TxPool;
 using Nethermind.Blockchain.Synchronization;
+using Nethermind.Serialization.Rlp;
+using System.Collections.Generic;
+using Nethermind.Core.Extensions;
 
 namespace Nethermind.Network.P2P.Subprotocols.Les
 {
@@ -150,6 +153,11 @@ namespace Nethermind.Network.P2P.Subprotocols.Les
                     if (NetworkDiagTracer.IsEnabled) NetworkDiagTracer.ReportIncomingMessage(Session.Node.Host, Name, getContractCodesMessage.ToString());
                     Handle(getContractCodesMessage);
                     break;
+                case LesMessageCode.GetHelperTrieProofs:
+                    GetHelperTrieProofsMessage getHelperTrieProofsMessage = Deserialize<GetHelperTrieProofsMessage>(message.Content);
+                    if (NetworkDiagTracer.IsEnabled) NetworkDiagTracer.ReportIncomingMessage(Session.Node.Host, Name, getHelperTrieProofsMessage.ToString());
+                    Handle(getHelperTrieProofsMessage);
+                    break;
             }
         }
 
@@ -231,6 +239,52 @@ namespace Nethermind.Network.P2P.Subprotocols.Les
             var codes = SyncServer.GetNodeData(getContractCodes.RequestAddresses, NodeDataType.Code);
             // todo - implement cost tracking
             Send(new ContractCodesMessage(codes, getContractCodes.RequestId, int.MaxValue));
+        }
+
+        public void Handle(GetHelperTrieProofsMessage getHelperTrieProofs)
+        {
+            Logger.Info("*** LES - Received GetHelperTrieProofsMessage Request ***");
+            Logger.Info($"  RequestId: {getHelperTrieProofs.RequestId}");
+            Logger.Info($"  Request Count: {getHelperTrieProofs.Requests.Length}");
+            foreach (var request in getHelperTrieProofs.Requests)
+            {
+                Logger.Info("----");
+                Logger.Info($"    RequestType: {request.SubType}");
+                Logger.Info($"    Request Section: {request.SectionIndex}");
+                Logger.Info($"    FromLevel :{request.FromLevel}");
+                Logger.Info($"    AuxData: {request.AuxiliaryData}");
+                Logger.Info($"    Key: {request.Key.WithoutLeadingZeros().ToArray().ToLongFromBigEndianByteArrayWithoutLeadingZeros()}");
+            }
+
+            List<byte[]> proofNodes = new List<byte[]>();
+            List<byte[]> auxData = new List<byte[]>();
+
+            for (int requestNo = 0; requestNo < getHelperTrieProofs.Requests.Length; requestNo++)
+            {
+                var request = getHelperTrieProofs.Requests[requestNo];
+
+                var cht = SyncServer.GetCHT(request.SectionIndex);
+                // todo - enum?
+                if (request.AuxiliaryData == 1)
+                {
+                    auxData.Add(cht.RootHash.Bytes);
+                    continue;
+                }
+                else if (request.AuxiliaryData == 2)
+                {
+                    (Keccak hash, _) = cht.Get(request.Key);
+                    var headerResult = SyncServer.FindHeaders(hash, 1, 0, false);
+                    if (headerResult.Length != 1) throw new SubprotocolException($"Unable to find header for block {request.Key} for GetHelperProofs response.");
+                    auxData.Add(Rlp.Encode(headerResult[0]).Bytes);
+                }
+                proofNodes.AddRange(cht.BuildProof(request.Key));
+                Logger.Info("*** proof content ***");
+                foreach (var node in proofNodes)
+                {
+                    Logger.Info(node.ToHexString());
+                }
+            }
+            Send(new HelperTrieProofsMessage(proofNodes.ToArray(), auxData.ToArray(), getHelperTrieProofs.RequestId, int.MaxValue));
         }
 
         public override bool HasAgreedCapability(Capability capability) => false;
